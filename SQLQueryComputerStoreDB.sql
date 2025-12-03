@@ -318,3 +318,82 @@ INNER JOIN (
 ) AS TopEmployee ON E.Id = TopEmployee.Id;
 
 
+----------------------------------------------------------------------------------------------------
+--21. Hər filialdakı işçi sayını tapın
+SELECT
+     B.BranchName,
+     COUNT(E.Id) AS [işçi sayı]
+FROM Branches AS B
+JOIN Employees AS E ON E.BranchId = B.Id
+GROUP BY B.Id, B.BranchName
+ORDER BY B.Id  
+
+--22. Hər filialda mövcud olan məhsul sayını tapın
+SELECT  
+     B.BranchName,
+     COUNT(P.Id)
+FROM Branches AS B
+JOIN Sales AS S ON B.Id = S.BranchId
+JOIN Products AS P ON S.ProductId = P.Id
+GROUP BY B.Id, B.BranchName
+ORDER BY B.Id  
+
+--23. Hər işçinin cari ayda satdığı məhsulların yekun qiymətini tapın
+SELECT 
+     E.Id, E.FirstName, E.LastName,
+     SUM(S.Quantity * P.Price) AS [Işçinin cari ayda satdığı məhsulların yekun qiyməti]
+FROM Sales AS S 
+JOIN Products AS P ON S.ProductId = P.Id 
+JOIN Employees AS E ON S.EmployeeId = E.Id
+WHERE YEAR(S.SaleDate) = YEAR(GETDATE()) 
+  AND MONTH(S.SaleDate) = MONTH(GETDATE())
+GROUP BY E.Id, E.FirstName, E.LastName
+ORDER BY E.Id;
+
+--24. Satılan hər məhsuldan 1% qazanc əldə etdiyini nəzərə alaraq car ayda 
+--hər bir satıcının maaşını hesablayın (rəsmi maaş : 350 AZN)
+SELECT
+    E.Id,
+    E.FirstName,
+    E.LastName,
+    350 AS [Rəsmi Maaş],
+    SUM(S.Quantity * P.Price * 0.01) AS [1% Komissiya],
+    350 + SUM(S.Quantity * P.Price * 0.01) AS [Yekun Maaş]
+FROM Employees AS E
+LEFT JOIN Sales AS S ON S.EmployeeId = E.Id
+LEFT JOIN Products AS P ON P.Id = S.ProductId
+WHERE YEAR(S.SaleDate) = YEAR(GETDATE())
+  AND MONTH(S.SaleDate) = MONTH(GETDATE())
+GROUP BY E.Id, E.FirstName, E.LastName
+ORDER BY E.Id;
+
+
+--25. Hər filial üzrə cari aydakı qazancı hesablayın.
+SELECT 
+    B.BranchName AS [Filial],
+    SUM(P.Price * S.Quantity) AS [Aylıq satış]
+FROM Branches AS B
+INNER JOIN Sales AS S ON B.Id = S.BranchId
+INNER JOIN Products AS P ON S.ProductId = P.Id
+WHERE YEAR(S.SaleDate) = YEAR(GETDATE()) 
+  AND MONTH(S.SaleDate) = MONTH(GETDATE())
+GROUP BY B.Id, B.BranchName
+ORDER BY B.Id;
+
+--26. Cari ay üzrə aylıq hesabatı çıxaran sorğu yazın
+SELECT
+    B.BranchName AS [Filial],
+    P.ProductName AS [Məhsul],
+    SUM(S.Quantity) AS [Satılan Məhsul Say],
+    SUM(S.Quantity * P.Price) AS [Ümumi Qazanc]
+FROM Sales AS S
+JOIN Branches AS B ON B.Id = S.BranchId
+JOIN Products AS P ON P.Id = S.ProductId
+WHERE YEAR(S.SaleDate) = YEAR(GETDATE())
+  AND MONTH(S.SaleDate) = MONTH(GETDATE())
+GROUP BY 
+    B.Id, B.BranchName,
+    P.Id, P.ProductName
+ORDER BY 
+    B.Id,
+    P.ProductName;
